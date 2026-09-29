@@ -475,41 +475,6 @@
     font-size:.82rem; opacity:.75;
   }
 
-  /* ---------- In-page editing ---------- */
-  .edit-toggle{
-    display:inline-flex; align-items:center; gap:.4em;
-    border:1px solid var(--line); background:none; color:var(--ink);
-    border-radius:999px; padding:.45em 1.1em; font-size:.8rem; font-weight:600;
-    cursor:pointer; font-family:inherit; line-height:1;
-  }
-  .edit-toggle:hover{ border-color:var(--moss); color:var(--moss); }
-  .edit-toggle[aria-pressed="true"]{ background:var(--moss); color:#fff; border-color:var(--moss); }
-  body.edit-mode [contenteditable="true"]{
-    outline:1px dashed var(--soil); outline-offset:3px; border-radius:4px; cursor:text;
-    transition:background .15s ease;
-  }
-  body.edit-mode [contenteditable="true"]:hover{ background:rgba(187,100,128,.08); }
-  body.edit-mode [contenteditable="true"]:focus{ outline:2px solid var(--moss); background:rgba(60,92,66,.08); }
-  .edit-toolbar{
-    position:fixed; left:50%; bottom:1.1rem; transform:translateX(-50%);
-    z-index:90; display:flex; align-items:center; gap:.7rem; flex-wrap:wrap;
-    justify-content:center; max-width:calc(100% - 2rem);
-    background:var(--band-bg); color:var(--band-ink);
-    padding:.7rem 1.1rem; border-radius:999px; box-shadow:0 16px 36px -14px rgba(0,0,0,.55);
-    font-size:.82rem;
-  }
-  .edit-toolbar button{
-    border:1px solid var(--band-line); background:none; color:var(--band-ink);
-    border-radius:999px; padding:.42em 1em; font-size:.8rem; font-weight:600;
-    cursor:pointer; font-family:inherit;
-  }
-  .edit-toolbar button:hover{ background:rgba(241,234,216,.1); }
-  .edit-toolbar button.primary{ background:var(--moss-bright); color:var(--band-bg); border-color:var(--moss-bright); }
-  .edit-status{ opacity:.7; white-space:nowrap; }
-  @media (max-width:640px){
-    .edit-toolbar{ font-size:.76rem; padding:.55em .8em; }
-    .edit-status{ width:100%; text-align:center; order:-1; }
-  }
 </style>
 
 <header class="site-header">
@@ -532,7 +497,6 @@
       <svg viewBox="0 0 24 24"><path d="M5 4h3.5l1.5 4-2 1.5a12 12 0 006 6l1.5-2 4 1.5V19c0 1.1-.9 2-2 2C10 21 3 14 3 6c0-1.1.9-2 2-2z"/></svg>
       0969-31-1600
     </a>
-    <button class="edit-toggle" id="editToggle" type="button" aria-pressed="false">✎ 編集</button>
     <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navMobile" aria-label="メニューを開く">
       <span></span><span></span><span></span>
     </button>
@@ -922,12 +886,6 @@
   <p class="note">熊本県天草郡苓北町 / 土木・造園</p>
 </footer>
 
-<div class="edit-toolbar" id="editToolbar" hidden>
-  <span class="edit-status" id="editStatus">編集モード：テキストをクリックして書き換えられます</span>
-  <button type="button" id="editExport" class="primary">HTMLを書き出す</button>
-  <button type="button" id="editReset">編集内容をリセット</button>
-</div>
-
 <div class="photo-lightbox" id="photoLightbox">
   <button type="button" class="photo-lightbox-close" id="photoLightboxClose" aria-label="閉じる">
     <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
@@ -989,160 +947,6 @@
     });
 
     startAuto();
-  })();
-
-  (function(){
-    var STORAGE_KEY = 'nagahama-edit-content-v1';
-    var MODE_KEY = 'nagahama-edit-mode-v1';
-    var ALLOWED_INLINE = ['BR', 'SVG', 'IMG'];
-    var SKIP_TAGS = ['A', 'BUTTON', 'SCRIPT', 'STYLE', 'SVG', 'PATH', 'IMG'];
-
-    var editToggle = document.getElementById('editToggle');
-    var toolbar = document.getElementById('editToolbar');
-    var statusEl = document.getElementById('editStatus');
-    var exportBtn = document.getElementById('editExport');
-    var resetBtn = document.getElementById('editReset');
-    var editableEls = [];
-
-    function isEditableCandidate(el){
-      if(SKIP_TAGS.indexOf(el.tagName) !== -1) return false;
-      if(el.closest('#editToolbar')) return false;
-      if(el.closest('button')) return false;
-      for(var i = 0; i < el.children.length; i++){
-        if(ALLOWED_INLINE.indexOf(el.children[i].tagName) === -1) return false;
-      }
-      return el.textContent.trim().length > 0;
-    }
-
-    function collectEditableElements(){
-      var scope = document.querySelectorAll('main *, footer *');
-      var result = [];
-      scope.forEach(function(el){
-        if(isEditableCandidate(el)) result.push(el);
-      });
-      return result;
-    }
-
-    function assignKeys(){
-      editableEls = collectEditableElements();
-      editableEls.forEach(function(el, i){ el.setAttribute('data-edit-key', 't' + i); });
-    }
-
-    function loadSaved(){
-      var raw;
-      try{ raw = localStorage.getItem(STORAGE_KEY); }catch(e){ return; }
-      if(!raw) return;
-      var data;
-      try{ data = JSON.parse(raw); }catch(e){ return; }
-      editableEls.forEach(function(el){
-        var k = el.getAttribute('data-edit-key');
-        if(Object.prototype.hasOwnProperty.call(data, k)) el.innerHTML = data[k];
-      });
-    }
-
-    function saveAll(){
-      var data = {};
-      editableEls.forEach(function(el){
-        data[el.getAttribute('data-edit-key')] = el.innerHTML;
-      });
-      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){ /* storage unavailable */ }
-    }
-
-    var saveTimer = null;
-    function scheduleSave(){
-      if(statusEl) statusEl.textContent = '編集中…';
-      if(saveTimer) clearTimeout(saveTimer);
-      saveTimer = setTimeout(function(){
-        saveAll();
-        if(statusEl) statusEl.textContent = 'このブラウザに自動保存しました（保存を確定するには「HTMLを書き出す」）';
-      }, 600);
-    }
-
-    function setEditMode(on){
-      editableEls.forEach(function(el){ el.setAttribute('contenteditable', on ? 'true' : 'false'); });
-      document.body.classList.toggle('edit-mode', on);
-      if(editToggle){
-        editToggle.setAttribute('aria-pressed', on ? 'true' : 'false');
-        editToggle.textContent = on ? '✓ 編集を終了' : '✎ 編集';
-      }
-      if(toolbar) toolbar.hidden = !on;
-      if(statusEl && on) statusEl.textContent = '編集モード：テキストをクリックして書き換えられます';
-      try{ localStorage.setItem(MODE_KEY, on ? '1' : '0'); }catch(e){ /* storage unavailable */ }
-    }
-
-    assignKeys();
-    loadSaved();
-
-    document.addEventListener('input', function(e){
-      var t = e.target;
-      if(t && t.getAttribute && t.getAttribute('contenteditable') === 'true') scheduleSave();
-    }, true);
-
-    if(editToggle){
-      editToggle.addEventListener('click', function(){
-        setEditMode(!document.body.classList.contains('edit-mode'));
-      });
-    }
-
-    if(exportBtn){
-      exportBtn.addEventListener('click', function(){
-        saveAll();
-        var clone = document.documentElement.cloneNode(true);
-        var t = clone.querySelector('#editToolbar'); if(t) t.remove();
-        var b = clone.querySelector('#editToggle'); if(b) b.remove();
-        clone.querySelectorAll('[contenteditable]').forEach(function(el){ el.removeAttribute('contenteditable'); });
-        clone.querySelectorAll('[data-edit-key]').forEach(function(el){ el.removeAttribute('data-edit-key'); });
-        clone.classList.remove('edit-mode');
-        var out = '<!doctype html>\n' + clone.outerHTML;
-        var blob = new Blob([out], { type: 'text/html' });
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.href = url;
-        a.download = 'index.html';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        if(statusEl) statusEl.textContent = 'HTMLファイルを書き出しました';
-      });
-    }
-
-    if(resetBtn){
-      var resetArmed = false;
-      var resetArmTimer = null;
-      var resetLabel = resetBtn.textContent;
-      resetBtn.addEventListener('click', function(){
-        var confirmed;
-        try{
-          confirmed = window.confirm('編集内容をすべて破棄して元に戻しますか？');
-        }catch(e){
-          confirmed = null; /* dialogs blocked (e.g. sandboxed preview) */
-        }
-        if(confirmed === true){
-          try{ localStorage.removeItem(STORAGE_KEY); }catch(e){ /* storage unavailable */ }
-          location.reload();
-          return;
-        }
-        if(confirmed === false) return;
-        /* confirm() unavailable: fall back to a two-click confirmation */
-        if(!resetArmed){
-          resetArmed = true;
-          resetBtn.textContent = 'もう一度押すとリセットされます';
-          resetArmTimer = setTimeout(function(){
-            resetArmed = false;
-            resetBtn.textContent = resetLabel;
-          }, 4000);
-          return;
-        }
-        clearTimeout(resetArmTimer);
-        try{ localStorage.removeItem(STORAGE_KEY); }catch(e){ /* storage unavailable */ }
-        location.reload();
-      });
-    }
-
-    try{
-      if(localStorage.getItem(MODE_KEY) === '1') setEditMode(true);
-    }catch(e){ /* storage unavailable */ }
   })();
 
   (function(){
