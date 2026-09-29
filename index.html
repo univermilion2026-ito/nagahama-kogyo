@@ -1,4 +1,5 @@
 <title>長濱興業 ブランドサイト構想</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
   :root{
     --paper:#dfe7cb;
@@ -222,6 +223,9 @@
     .nav-desktop{ display:none; }
     .nav-toggle{ display:flex; }
   }
+  @media (max-width:420px){
+    .tel-badge .tel-num{ display:none; }
+  }
 
   /* ---------- Hero ---------- */
   .hero{
@@ -255,6 +259,10 @@
   }
   .hero-meta .unit{ font-size:1rem; color:var(--moss); font-weight:600; }
   .hero-meta .cap{ font-size:.82rem; color:var(--ink-soft); align-self:flex-end; margin-bottom:.3em; }
+  @media (max-width:640px){
+    .hero-lead{ margin-left:0 !important; }
+    .hero-lead-break{ display:none; }
+  }
   .hero-bottom-illust{
     display:block; width:100vw; max-width:100vw;
     margin-left:calc(50% - 50vw); margin-right:calc(50% - 50vw);
@@ -493,9 +501,9 @@
     <a href="contact.html">お問い合わせ</a>
   </nav>
   <div class="header-right">
-    <a class="tel-badge" href="tel:0969311600">
+    <a class="tel-badge" href="tel:0969311600" aria-label="電話 0969-31-1600">
       <svg viewBox="0 0 24 24"><path d="M5 4h3.5l1.5 4-2 1.5a12 12 0 006 6l1.5-2 4 1.5V19c0 1.1-.9 2-2 2C10 21 3 14 3 6c0-1.1.9-2 2-2z"/></svg>
-      0969-31-1600
+      <span class="tel-num">0969-31-1600</span>
     </a>
     <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navMobile" aria-label="メニューを開く">
       <span></span><span></span><span></span>
@@ -536,7 +544,7 @@
       </div>
       <p class="eyebrow">熊本県天草郡苓北町 / 土木・造園</p>
       <h1 class="hero-title serif" style="font-size:clamp(1.21rem, 4.84vw, 2.54rem);white-space:nowrap;">『山を育み、地域を育み、未来を創る』</h1>
-      <p class="hero-lead" style="max-width:40em;margin:0 auto 2.6rem;margin-left:max(2rem, 12%);">当社は造園業から歩みをはじめ、昭和57年に株式会社長濱興業を設立。<br>創業以来、インフラ保全や公共工事を通じて地域の暮らしと社会基盤を支えて<br>まいりました。時代の変化とともに、培ってきた技術と経験を生かしながら最新の<br>ICT機器やデジタル技術を導入し、安心・安全な未来をつないでまいります。</p>
+      <p class="hero-lead" style="max-width:40em;margin:0 auto 2.6rem;margin-left:max(2rem, 12%);">当社は造園業から歩みをはじめ、昭和57年に株式会社長濱興業を設立。<br class="hero-lead-break">創業以来、インフラ保全や公共工事を通じて地域の暮らしと社会基盤を支えて<br class="hero-lead-break">まいりました。時代の変化とともに、培ってきた技術と経験を生かしながら最新の<br class="hero-lead-break">ICT機器やデジタル技術を導入し、安心・安全な未来をつないでまいります。</p>
       <div class="hero-meta">
         <div><span class="num">50</span><span class="unit">年以上</span><span class="cap">の地域実績</span></div>
         <div><span class="num">92</span><span class="unit">%</span><span class="cap">社員定着率</span></div>
