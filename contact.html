@@ -444,9 +444,10 @@
         </ol>
 
         <!-- STEP 1: 入力 -->
-        <form id="contactForm" novalidate data-step-panel="input">
+        <form id="contactForm" novalidate data-step-panel="input" action="https://formsubmit.co/yuki45@wonder.ocn.ne.jp" method="POST">
           <input type="hidden" name="_subject" value="【長濱興業サイト】お問い合わせ">
           <input type="hidden" name="_template" value="table">
+          <input type="hidden" name="_next" value="https://univermilion2026-ito.github.io/nagahama-kogyo/contact.html?sent=1">
           <p class="form-notice"><span class="req">必須</span> の項目は必ずご入力ください。</p>
           <div class="error-summary" id="errorSummary" role="alert" tabindex="-1">入力内容に不備があります。赤く表示された項目をご確認ください。</div>
 
@@ -537,7 +538,7 @@
           </div>
 
           <div class="form-actions">
-            <button class="btn btn-primary" type="submit">入力内容を確認する</button>
+            <button class="btn btn-primary" type="submit" id="reviewBtn">入力内容を確認する</button>
           </div>
         </form>
 
@@ -548,7 +549,7 @@
           <div class="error-summary" id="sendError" role="alert">送信に失敗しました。時間をおいて再度お試しいただくか、お電話にてお問い合わせください。</div>
           <div class="form-actions">
             <button class="btn btn-ghost" type="button" id="backBtn">入力画面に戻る</button>
-            <button class="btn btn-primary" type="button" id="sendBtn">送信する</button>
+            <button class="btn btn-primary" type="submit" id="sendBtn" form="contactForm">送信する</button>
           </div>
         </div>
 
@@ -605,14 +606,8 @@
 </footer>
 
 <script>
-  // 送信先URL。フォーム送信サービス（Formspree / FormSubmit / 自社PHP等）のURLを設定してください。
-  // 設定した場合はこちらが優先され、fetchでサーバーに送信されます。
-  var FORM_ENDPOINT = 'https://formsubmit.co/ajax/yuki45@wonder.ocn.ne.jp';
-
-  // FORM_ENDPOINT が未設定の場合、代わりにこのメールアドレス宛のメールを
-  // お使いのメールソフトで作成する（mailto:）フォールバックとして使用します。
-  // 両方とも空の場合は送信せず、完了画面をデモとして表示します。
-  var CONTACT_EMAIL = 'yuki45@wonder.ocn.ne.jp';
+  // 送信先は <form action="https://formsubmit.co/..."> に直接設定済み。
+  // JavaScriptでのfetch送信は行わず、通常のHTML POSTでFormSubmitに送信します。
 
   // ---- Mobile nav ----
   var toggle = document.getElementById('navToggle');
@@ -707,6 +702,16 @@
   }
 
   form.addEventListener('submit', function(e){
+    // 「送信する」ボタン：確認済みの内容をFormSubmitへ通常のPOSTで送信する
+    if (e.submitter && e.submitter.id === 'sendBtn'){
+      // ボット判定：隠し欄に入力があれば送信しない
+      if (form.elements.website.value){ e.preventDefault(); return; }
+      sendBtn.disabled = true;
+      sendBtn.textContent = '送信中…';
+      return; // preventDefaultしない＝ブラウザが通常通りフォームを送信
+    }
+
+    // 「入力内容を確認する」ボタン：確認画面を表示するだけで送信はしない
     e.preventDefault();
     var bad = validate();
     if (bad){
@@ -728,58 +733,15 @@
       row.appendChild(dt); row.appendChild(dd);
       confirmList.appendChild(row);
     });
-    sendError.classList.remove('show');
     showStep('confirm');
   });
 
   document.getElementById('backBtn').addEventListener('click', function(){ showStep('input'); });
 
-  sendBtn.addEventListener('click', function(){
-    // ボット判定：隠し欄に入力があれば送信しない
-    if (form.elements.website.value){ return; }
-    sendBtn.disabled = true;
-    sendBtn.textContent = '送信中…';
-    sendError.classList.remove('show');
-
-    var done = function(mode){
-      document.getElementById('demoNote').hidden = mode !== 'demo';
-      document.getElementById('mailNote').hidden = mode !== 'mail';
-      form.reset();
-      sendBtn.disabled = false;
-      sendBtn.textContent = '送信する';
-      msgCount.textContent = '0';
-      showStep('complete');
-      document.getElementById('completeTitle').focus({ preventScroll: true });
-    };
-    var fail = function(){
-      sendBtn.disabled = false;
-      sendBtn.textContent = '送信する';
-      sendError.classList.add('show');
-    };
-
-    if (FORM_ENDPOINT){
-      fetch(FORM_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Accept': 'application/json' },
-        body: new FormData(form)
-      }).then(function(res){
-        if (res.ok) done('sent'); else fail();
-      }).catch(fail);
-      return;
-    }
-
-    if (CONTACT_EMAIL){
-      var data = getData();
-      var subject = '【HPお問い合わせ】' + (data.category || 'お問い合わせ');
-      var body = LABELS.map(function(p){ return p[1] + '：' + (data[p[0]] || '（未入力）'); }).join('\n');
-      var mailto = 'mailto:' + encodeURIComponent(CONTACT_EMAIL)
-        + '?subject=' + encodeURIComponent(subject)
-        + '&body=' + encodeURIComponent(body);
-      window.location.href = mailto;
-      setTimeout(function(){ done('mail'); }, 400);
-      return;
-    }
-
-    setTimeout(function(){ done('demo'); }, 500);
-  });
+  // FormSubmitでの送信完了後、_next で ?sent=1 付きでこのページに戻ってくる
+  if (location.search.indexOf('sent=1') !== -1){
+    showStep('complete');
+    document.getElementById('completeTitle').focus({ preventScroll: true });
+    history.replaceState(null, '', location.pathname);
+  }
 </script>
